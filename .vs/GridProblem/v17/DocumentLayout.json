@@ -1,0 +1,58 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\azapa\\source\\repos\\GridProblem\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{962A3334-0AF3-449E-AC79-1D5556A6C4F4}|GridProblem\\GridProblem.csproj|c:\\users\\azapa\\source\\repos\\gridproblem\\gridproblem\\solution.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{962A3334-0AF3-449E-AC79-1D5556A6C4F4}|GridProblem\\GridProblem.csproj|solutionrelative:gridproblem\\solution.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{962A3334-0AF3-449E-AC79-1D5556A6C4F4}|GridProblem\\GridProblem.csproj|c:\\users\\azapa\\source\\repos\\gridproblem\\gridproblem\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{962A3334-0AF3-449E-AC79-1D5556A6C4F4}|GridProblem\\GridProblem.csproj|solutionrelative:gridproblem\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Solution.cs",
+              "DocumentMoniker": "C:\\Users\\azapa\\source\\repos\\GridProblem\\GridProblem\\Solution.cs",
+              "RelativeDocumentMoniker": "GridProblem\\Solution.cs",
+              "ToolTip": "C:\\Users\\azapa\\source\\repos\\GridProblem\\GridProblem\\Solution.cs",
+              "RelativeToolTip": "GridProblem\\Solution.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAowBsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-15T17:07:02.111Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\azapa\\source\\repos\\GridProblem\\GridProblem\\Program.cs",
+              "RelativeDocumentMoniker": "GridProblem\\Program.cs",
+              "ToolTip": "C:\\Users\\azapa\\source\\repos\\GridProblem\\GridProblem\\Program.cs",
+              "RelativeToolTip": "GridProblem\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-15T17:01:07.215Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
