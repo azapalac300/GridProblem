@@ -26,7 +26,6 @@ namespace GridProblem
                     Console.WriteLine(line);
                 }
 
-                
             }
             else
             {
@@ -35,11 +34,12 @@ namespace GridProblem
         }
             
      
+        //Key assumptions:
+        //Assume that 
 
-        public void Solve () { }
-        public static void Foo()
-        {
-            Console.WriteLine("This is Foo");
+        public void Solve () {
+        
         }
+    
     }
 }
