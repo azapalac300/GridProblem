@@ -2,7 +2,7 @@
 using GridProblem;
 
 Solution s = new Solution();
-
+s.Solve();
 /*
 while (true)
 {
