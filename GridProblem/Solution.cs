@@ -5,22 +5,29 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 //using 
 
 namespace GridProblem
 {
+
     public class Point
     {
+
+        //Use Mathf.Round to remove floating point errors and set Precision to the number of digits we want to round to
+        //Since the solution needs to be precise to 1 decimal place, 1 is the mimimum needed to be safe, but we will use 5 just in case. 
+        public int Precision { get { return 5; } }
         public float X, Y;
         public Point(float x, float y)
         {
-            X = x;
-            Y = y;
+            X = MathF.Round(x, Precision);
+            Y = MathF.Round(y, Precision);
         }
 
         public float Distance(Point p)
         {
-            Point diff = new Point(X - p.X, Y-p.Y);
+            Point diff = new Point(X - p.X, Y - p.Y);
             return diff.Magnitude();
         }
 
@@ -34,7 +41,8 @@ namespace GridProblem
             return "(" + X + "," + Y + ")";
         }
 
-        public static Point operator +(Point p1, Point p2) { 
+        #region operators
+        public static Point operator +(Point p1, Point p2) {
             return new Point(p1.X + p2.X, p1.Y + p2.Y);
         }
 
@@ -43,10 +51,28 @@ namespace GridProblem
             return new Point(p1.X - p2.X, p1.Y - p2.Y);
         }
 
+        public static Point operator *(Point p, int s)
+        {
+            return new Point(p.X * s, p.Y * s);
+        }
+
+        public static bool operator ==(Point p1, Point p2)
+        {
+            return p1.X == p2.X && p1.Y == p2.Y;
+        }
+
+        public static bool operator !=(Point p1, Point p2)
+        {
+            return p1.X != p2.X && p1.Y != p2.Y;
+        }
+        #endregion
+
     }
     public class Solution
     {
         public List<Point> gridPositions;
+        public Dictionary<string, Point>        //Map the points. We will need this to do data matching later as the given points are not perfectly collinear.
+       
 
 
         public Solution()
@@ -66,7 +92,7 @@ namespace GridProblem
                     string[] words = line.Split(',');
                     float x = float.Parse(words[0]);
                     Point p = new Point(float.Parse(words[0]), float.Parse(words[1]));
-                    Console.WriteLine(p.X + "," + p.Y);
+                    Console.WriteLine(p);
                     gridPositions.Add(p);
                 }
 
@@ -86,7 +112,7 @@ namespace GridProblem
 
         //ALL graph points are present in the given data set.
         //This means we need to find the smallest delta X and use it to compute delta Y (Assuming the grid is square and each cell is square)
-        //This gives us the dimensions of an idndividual cell
+        //This gives us the dimensions of an individual cell
         //We find the mid point and use that as an "Anchor point" to re compute the data using our delta x and delta Y
         //Once we have matched all the data we use the coefficients to find the row and column of each data point
 
@@ -98,52 +124,83 @@ namespace GridProblem
             Point midPointApprox = new Point(xAvg, yAvg);
 
             Console.WriteLine("Mid point approximate: " + midPointApprox);
-            float minDist = float.MaxValue;
-            int centerIndex = -1;
-            Point midPoint = new Point(0, 0);
+            float maxDist = -1;
+            int origIndex = -1;
+            Point origPoint = new Point(0, 0);
+
             //The point in the dataset closest to the average will be the center point
+
+            //Matching the center point to a point on the graph only works if the number of data points is odd.
+            //To make it work for even numbered sets, find the origin point instead of the mid point.
+            //Since we already have a mid point, we need to find the largest vector with x and y components both negative. 
             for (int i = 0; i < gridPositions.Count; i++)
             {
-                Point diff =  gridPositions[i] - midPointApprox;
+                Point diff =   gridPositions[i] - midPointApprox;
                 float dist = diff.Magnitude();
 
-                if (dist < minDist)
+                if (dist > maxDist)
                 {
-                    minDist = dist;
-                    centerIndex = i;
-                }
-            }
-            midPoint = gridPositions[centerIndex];
-            Console.WriteLine("Mid Point: " + midPoint);
-
-            //Now we find the smallest diff that isn't the mid point. Since every cell of the grid is a square, this will be our first vector
-            //We just need to rotate it 90 degrees to find the secod
-            //we can re-use minDist here, no need to declare a new variable
-
-            
-            minDist = float.MaxValue;
-            Point deltaA = new Point(0, 0);
-            for(int i = 0; i < gridPositions.Count; i++)
-            {
-                if(i != centerIndex)
-                {
-                    Point diff = midPoint - gridPositions[i];
-                    float dist = diff.Magnitude();
-                    if (dist < minDist)
+                    if (diff.X < 0 && diff.Y < 0)
                     {
-                        minDist= dist;
-                        deltaA = diff;
+                        maxDist = dist;
+                        origIndex = i;
                     }
                 }
             }
-            //Now that we have delta A, we can find delta b
-            Point deltaB = new Point (-deltaA.Y, deltaA.X);
+            
+            origPoint = gridPositions[origIndex];
+            Console.WriteLine("Origin Point: " + origPoint);
+
+            //Now we find the smallest diff between the orig point and another point. This is our grid cell size. 
+            //We just need to rotate it 90 degrees to find the second grid cell size
+            //Once we have both of these, we can reconstruct the graph
+
+            float minDist = float.MaxValue;
+            Point deltaA = new Point(0, 0);
+            int checkIndex = -1;
+            for(int i = 0; i < gridPositions.Count; i++)
+            {
+                if(i != origIndex)
+                {
+                    Point diff = gridPositions[i] - origPoint;
+                    float dist = diff.Magnitude();
+                    if (dist < minDist)
+                    {
+                        minDist = dist;
+                        deltaA = diff;
+                        checkIndex = i;
+                    }
+                }
+            }
+
+            //Now that we have delta A, we can find delta B. Since these are our two fundamental coordinates, we can reconstruct the entire graph with them
+            Point deltaB = new Point (deltaA.Y, -deltaA.X);
+            Console.WriteLine("DeltaA: " + deltaA + "  DeltaB: " + deltaB);
+            //run check. if dataset contains origin + deltaB we are good. Otherwise we will have to invert deltaB
+            //We can escape the loop early if we find deltaB.
+            Point testPoint = origPoint + deltaB;
+            Console.WriteLine("Test point: " + testPoint);
+
+
 
 
             //Assuming the graph will always be a perfect square, we can find its dimensions
             int dim = (int)MathF.Sqrt(gridPositions.Count);
 
-            //since we are use integer division 
+            //Now we reconstruct the graph. Since dim is the square root of gridPositions.Count, this is technically a linear operation ;)
+            //Assumption: Gaps between cells is larger than 1.
+            //
+            //Since "Rows" and "Columns" is not collinear, a heuristic is needed to match the non-linear data with the linear data I have generated here. 
+            //The Band-Aid heuristic I am using here is to round the point X and Y values to the nearest integer 
+            for (int i = 0; i < dim; i++)
+            {
+                for (int j = 0; j < dim; j++)
+                {
+                    Point gridPoint = origPoint + deltaA*i + deltaB*j;
+                    Console.WriteLine(gridPoint);
+                }
+
+            }
 
         }
     
