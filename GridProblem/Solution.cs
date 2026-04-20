@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Runtime.InteropServices;
 
-//NOTE: Debug statements have been commented out
 
 namespace GridProblem
 {
@@ -93,12 +92,9 @@ namespace GridProblem
 
                 while ((line = reader.ReadLine())!= null)
                 {
-
-                    //Console.WriteLine(line);
                     string[] words = line.Split(',');
                     float x = float.Parse(words[0]);
                     Point p = new Point(float.Parse(words[0]), float.Parse(words[1]));
-                    Console.WriteLine(p);
                     gridPositions.Add(p);
 
                     //Add position to positionmap
@@ -159,7 +155,6 @@ namespace GridProblem
             }
             
             origPoint = gridPositions[origIndex];
-            //Console.WriteLine("Origin Point: " + origPoint);
 
             //Now we find the smallest diff between the orig point and another point. This is our grid cell size. 
             //We just need to rotate it 90 degrees to find the second grid cell size
@@ -167,7 +162,6 @@ namespace GridProblem
 
             float minDist = float.MaxValue;
             Point deltaA = new Point(0, 0);
-            int checkIndex = -1;
             for(int i = 0; i < gridPositions.Count; i++)
             {
                 if(i != origIndex)
@@ -178,47 +172,80 @@ namespace GridProblem
                     {
                         minDist = dist;
                         deltaA = diff;
-                        checkIndex = i;
                     }
                 }
             }
 
             //Now that we have delta A, we can find delta B. Since these are our two fundamental coordinates, we can reconstruct the entire graph with them
             Point deltaB = new Point (deltaA.Y, -deltaA.X);
-            //Console.WriteLine("DeltaA: " + deltaA + "  DeltaB: " + deltaB);
+            
+            PrintSolution(origPoint, deltaA, deltaB);
 
 
-            //Assuming the graph will always be a perfect square, we can find its dimensions
-             int dim = (int)MathF.Sqrt(gridPositions.Count);
-
-            //Now we reconstruct the graph. Since dim is the square root of gridPositions.Count, this is technically a linear operation ;)
-            //Assumption: Graph increment size is larger than 1. Mapping function does not work otherwise
-            //
-            //Since "Rows" and "Columns" is not collinear, a heuristic is needed to match the non-linear data with the linear data I have generated here. 
-            //The Band-Aid heuristic I am using here is to round the point X and Y values to the nearest integer causing a collision with the map I defined in the constructor.
-            //I have included the collinear data I generated in the solution
-
-            for (int i = 0; i < dim; i++)
-            {
-                for (int j = 0; j < dim; j++)
-                {
-                    Point gridPoint = origPoint + deltaA*i + deltaB*j;
-                    
-
-                    //create a collision by rounding to the nearest integer. This efficiently maps the 
-                    Point keyPoint = new Point (MathF.Round(gridPoint.X), MathF.Round(gridPoint.Y));
-                    Console.WriteLine("Row: " + i + " Column: " + j + " " + positionMap[keyPoint.ToString()] + " Collinear point: " + gridPoint);
-
-                }
-
-            }
-
+           
             //Calculate alpha based on deltaA and deltaB
             CalculateAlpha(deltaA, deltaB);
 
         }
 
-        public void CalculateAlpha(Point deltaA, Point deltaB)
+        private void PrintSolution(Point origPoint, Point deltaA, Point deltaB)
+        {
+            //Now we reconstruct the graph and use that reconstruction to print the solution.
+            //Since dim is the square root of gridPositions.Count, this is technically a linear operation ;)
+            //Assumption: Graph increment size is larger than 1. Mapping function does not work otherwise.
+            //
+            //Since the data set is not collinear, a heuristic is needed to match the non-linear data with the linear data I have generated here. 
+            //The Band-Aid heuristic I am using here is to round the point X and Y values to the nearest integer causing a collision with the map I defined in the constructor.
+
+            //Here I have formatted the data to match the desired pattern, hence the repetition
+
+            //Assuming the graph will always be a perfect square, we can find its dimensions as an integer
+            int dim = (int)MathF.Sqrt(gridPositions.Count);
+
+            for (int i = 0; i < dim; i++)
+            {
+                string s = " Row " + i + ": ";
+                for (int j = 0; j < dim; j++)
+                {
+                    Point gridPoint = origPoint + deltaA * i + deltaB * j;
+
+
+                    //create a collision by rounding to the nearest integer.
+                    //This efficiently maps the linear  points I have generated with the non-linear points in the data set
+                    Point keyPoint = new Point(MathF.Round(gridPoint.X), MathF.Round(gridPoint.Y));
+                    s += positionMap[keyPoint.ToString()];
+                    if (j < dim - 1)
+                    {
+                        s += "-";
+                    }
+
+                }
+                Console.WriteLine(s);
+            }
+
+
+            for (int i = 0; i < dim; i++)
+            {
+                string s = " Col " + i + ": ";
+                for (int j = dim - 1; j >= 0; j--)
+                {
+                    //Do the same for the columns. Here I switch DeltaB with DeltaA to generate column data instead of row data
+                    Point gridPoint = origPoint + deltaB * i + deltaA * j;
+
+                    Point keyPoint = new Point(MathF.Round(gridPoint.X), MathF.Round(gridPoint.Y));
+                    s += positionMap[keyPoint.ToString()];
+                    if (j > 0)
+                    {
+                        s += "-";
+                    }
+
+                }
+                Console.WriteLine(s);
+            }
+
+        }
+
+        private void CalculateAlpha(Point deltaA, Point deltaB)
         {
 
             //Now that we have deltaA and deltaB, we can calculate alpha
