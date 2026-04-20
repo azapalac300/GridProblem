@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography;
 using System.Runtime.InteropServices;
-//using 
+
+//NOTE: Debug statements have been commented out
 
 namespace GridProblem
 {
@@ -65,13 +64,20 @@ namespace GridProblem
         {
             return p1.X != p2.X && p1.Y != p2.Y;
         }
+
+        public static float Dot(Point p1, Point p2)
+        {
+            return p1.X*p2.X + p1.Y*p2.Y;
+        }
         #endregion
 
     }
     public class Solution
     {
         public List<Point> gridPositions;
-        public Dictionary<string, Point>        //Map the points. We will need this to do data matching later as the given points are not perfectly collinear.
+
+        //Map the points. This seems reduntant, but we will need this to do data matching later as the given points are not perfectly collinear.
+        public Dictionary<string, Point> positionMap;     
        
 
 
@@ -79,7 +85,7 @@ namespace GridProblem
         {
             string path = "grid_input.txt";
             gridPositions = new List<Point>();
-
+            positionMap = new Dictionary<string, Point>();
             if (File.Exists(path))
             {
                 StreamReader reader = new StreamReader(path);
@@ -94,6 +100,10 @@ namespace GridProblem
                     Point p = new Point(float.Parse(words[0]), float.Parse(words[1]));
                     Console.WriteLine(p);
                     gridPositions.Add(p);
+
+                    //Add position to positionmap
+                    Point keyPoint = new Point(MathF.Round(p.X), MathF.Round(p.Y));
+                    positionMap.Add(keyPoint.ToString(), p);
                 }
 
             }
@@ -123,7 +133,7 @@ namespace GridProblem
             float yAvg = gridPositions.Average(p => p.Y);
             Point midPointApprox = new Point(xAvg, yAvg);
 
-            Console.WriteLine("Mid point approximate: " + midPointApprox);
+            //Console.WriteLine("Mid point approximate: " + midPointApprox);
             float maxDist = -1;
             int origIndex = -1;
             Point origPoint = new Point(0, 0);
@@ -149,7 +159,7 @@ namespace GridProblem
             }
             
             origPoint = gridPositions[origIndex];
-            Console.WriteLine("Origin Point: " + origPoint);
+            //Console.WriteLine("Origin Point: " + origPoint);
 
             //Now we find the smallest diff between the orig point and another point. This is our grid cell size. 
             //We just need to rotate it 90 degrees to find the second grid cell size
@@ -175,35 +185,67 @@ namespace GridProblem
 
             //Now that we have delta A, we can find delta B. Since these are our two fundamental coordinates, we can reconstruct the entire graph with them
             Point deltaB = new Point (deltaA.Y, -deltaA.X);
-            Console.WriteLine("DeltaA: " + deltaA + "  DeltaB: " + deltaB);
-            //run check. if dataset contains origin + deltaB we are good. Otherwise we will have to invert deltaB
-            //We can escape the loop early if we find deltaB.
-            Point testPoint = origPoint + deltaB;
-            Console.WriteLine("Test point: " + testPoint);
-
-
+            //Console.WriteLine("DeltaA: " + deltaA + "  DeltaB: " + deltaB);
 
 
             //Assuming the graph will always be a perfect square, we can find its dimensions
-            int dim = (int)MathF.Sqrt(gridPositions.Count);
+             int dim = (int)MathF.Sqrt(gridPositions.Count);
 
             //Now we reconstruct the graph. Since dim is the square root of gridPositions.Count, this is technically a linear operation ;)
-            //Assumption: Gaps between cells is larger than 1.
+            //Assumption: Graph increment size is larger than 1. Mapping function does not work otherwise
             //
             //Since "Rows" and "Columns" is not collinear, a heuristic is needed to match the non-linear data with the linear data I have generated here. 
-            //The Band-Aid heuristic I am using here is to round the point X and Y values to the nearest integer 
+            //The Band-Aid heuristic I am using here is to round the point X and Y values to the nearest integer causing a collision with the map I defined in the constructor.
+            //I have included the collinear data I generated in the solution
+
             for (int i = 0; i < dim; i++)
             {
                 for (int j = 0; j < dim; j++)
                 {
                     Point gridPoint = origPoint + deltaA*i + deltaB*j;
-                    Console.WriteLine(gridPoint);
+                    
+
+                    //create a collision by rounding to the nearest integer. This efficiently maps the 
+                    Point keyPoint = new Point (MathF.Round(gridPoint.X), MathF.Round(gridPoint.Y));
+                    Console.WriteLine("Row: " + i + " Column: " + j + " " + positionMap[keyPoint.ToString()] + " Collinear point: " + gridPoint);
+
                 }
 
             }
 
+            //Calculate alpha based on deltaA and deltaB
+            CalculateAlpha(deltaA, deltaB);
+
         }
-    
+
+        public void CalculateAlpha(Point deltaA, Point deltaB)
+        {
+
+            //Now that we have deltaA and deltaB, we can calculate alpha
+            //between deltaA and deltaB, find the lowest dot product with the Forward vector (0, 1)
+            Point fwd = new Point(0, 1);
+            float dotA = Point.Dot(deltaA, fwd);
+            float dotB = Point.Dot(deltaB, fwd);
+
+            float maxDot = 0;
+            Point closestToFwd = new Point(0, 0);
+            if (dotA > dotB)
+            {
+                maxDot = dotA;
+                closestToFwd = deltaA;
+            }
+            else
+            {
+                maxDot = dotB;
+                closestToFwd = deltaB;
+            }
+
+            //Magnitude of the forward vector is 1
+            //so we just need the magnitde of closestToFwd
+            float alpha = MathF.Acos(maxDot / closestToFwd.Magnitude()) * (180.0f / MathF.PI);
+            Console.WriteLine("Alpha: " + alpha);
+        }
+   
     }
 }
     
