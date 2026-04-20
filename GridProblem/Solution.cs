@@ -23,6 +23,7 @@ namespace GridProblem
             Y = MathF.Round(y, Precision);
         }
 
+
         public float Distance(Point p)
         {
             Point diff = new Point(X - p.X, Y - p.Y);
@@ -37,6 +38,11 @@ namespace GridProblem
         public override string ToString()
         {
             return "(" + X + "," + Y + ")";
+        }
+
+        public static float Dot(Point p1, Point p2)
+        {
+            return p1.X * p2.X + p1.Y * p2.Y;
         }
 
         #region operators
@@ -63,11 +69,6 @@ namespace GridProblem
         {
             return p1.X != p2.X && p1.Y != p2.Y;
         }
-
-        public static float Dot(Point p1, Point p2)
-        {
-            return p1.X*p2.X + p1.Y*p2.Y;
-        }
         #endregion
 
     }
@@ -77,8 +78,6 @@ namespace GridProblem
 
         //Map the points. This seems reduntant, but we will need this to do data matching later as the given points are not perfectly collinear.
         public Dictionary<string, Point> positionMap;     
-       
-
 
         public Solution()
         {
@@ -119,7 +118,7 @@ namespace GridProblem
         //ALL graph points are present in the given data set.
         //This means we need to find the smallest delta X and use it to compute delta Y (Assuming the grid is square and each cell is square)
         //This gives us the dimensions of an individual cell
-        //We find the mid point and use that as an "Anchor point" to re compute the data using our delta x and delta Y
+        //We find the origin of the grap and use that as an "Anchor point" to re compute the data using our delta x and delta Y
         //Once we have matched all the data we use the coefficients to find the row and column of each data point
 
         public void Solve()
@@ -129,16 +128,15 @@ namespace GridProblem
             float yAvg = gridPositions.Average(p => p.Y);
             Point midPointApprox = new Point(xAvg, yAvg);
 
-            //Console.WriteLine("Mid point approximate: " + midPointApprox);
             float maxDist = -1;
             int origIndex = -1;
             Point origPoint = new Point(0, 0);
 
-            //The point in the dataset closest to the average will be the center point
 
-            //Matching the center point to a point on the graph only works if the number of data points is odd.
-            //To make it work for even numbered sets, find the origin point instead of the mid point.
-            //Since we already have a mid point, we need to find the largest vector with x and y components both negative. 
+            //We can use the mid point as an "Anchor Point" for the graph as well, but this only works effectively if the number of points in graph is odd.
+            //To make it work for even numbered sets as well, find the origin point instead of the mid point.
+            //Since we already have a mid point, we need to find the largest vector with x and y components both negative.
+            //Finding this will get us the graph's origin
             for (int i = 0; i < gridPositions.Count; i++)
             {
                 Point diff =   gridPositions[i] - midPointApprox;
@@ -179,10 +177,9 @@ namespace GridProblem
             //Now that we have delta A, we can find delta B. Since these are our two fundamental coordinates, we can reconstruct the entire graph with them
             Point deltaB = new Point (deltaA.Y, -deltaA.X);
             
+            //With origPoint, deltaA, and deltaB, we have what we need to print our solution
             PrintSolution(origPoint, deltaA, deltaB);
 
-
-           
             //Calculate alpha based on deltaA and deltaB
             CalculateAlpha(deltaA, deltaB);
 
@@ -191,57 +188,69 @@ namespace GridProblem
         private void PrintSolution(Point origPoint, Point deltaA, Point deltaB)
         {
             //Now we reconstruct the graph and use that reconstruction to print the solution.
-            //Since dim is the square root of gridPositions.Count, this is technically a linear operation ;)
-            //Assumption: Graph increment size is larger than 1. Mapping function does not work otherwise.
-            //
+
             //Since the data set is not collinear, a heuristic is needed to match the non-linear data with the linear data I have generated here. 
             //The Band-Aid heuristic I am using here is to round the point X and Y values to the nearest integer causing a collision with the map I defined in the constructor.
+            //Assumption: Graph increment size is larger than 1. Mapping function does not work otherwise.
 
             //Here I have formatted the data to match the desired pattern, hence the repetition
 
             //Assuming the graph will always be a perfect square, we can find its dimensions as an integer
             int dim = (int)MathF.Sqrt(gridPositions.Count);
+            //I've printed the collinear solutions I generated as well.
 
+            Console.WriteLine("Solution: ");
+            string collinear = "";
             for (int i = 0; i < dim; i++)
             {
                 string s = " Row " + i + ": ";
+                collinear += s;
                 for (int j = 0; j < dim; j++)
                 {
                     Point gridPoint = origPoint + deltaA * i + deltaB * j;
+                    collinear += gridPoint;
 
-
-                    //create a collision by rounding to the nearest integer.
+                    //create a unique collision by rounding to the nearest integer.
                     //This efficiently maps the linear  points I have generated with the non-linear points in the data set
                     Point keyPoint = new Point(MathF.Round(gridPoint.X), MathF.Round(gridPoint.Y));
                     s += positionMap[keyPoint.ToString()];
                     if (j < dim - 1)
                     {
                         s += "-";
+                        collinear  += "-";
                     }
 
                 }
                 Console.WriteLine(s);
+                collinear += "\n";
             }
 
 
             for (int i = 0; i < dim; i++)
             {
                 string s = " Col " + i + ": ";
+                collinear += s;
                 for (int j = dim - 1; j >= 0; j--)
                 {
                     //Do the same for the columns. Here I switch DeltaB with DeltaA to generate column data instead of row data
                     Point gridPoint = origPoint + deltaB * i + deltaA * j;
+                    collinear += gridPoint;
 
                     Point keyPoint = new Point(MathF.Round(gridPoint.X), MathF.Round(gridPoint.Y));
                     s += positionMap[keyPoint.ToString()];
                     if (j > 0)
                     {
                         s += "-";
+                        collinear += "-";
                     }
 
                 }
                 Console.WriteLine(s);
+                collinear += "\n";
             }
+            Console.WriteLine();
+            Console.WriteLine("Generated collinear data:");
+            Console.WriteLine(collinear);
 
         }
 
