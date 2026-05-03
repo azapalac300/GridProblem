@@ -1,6 +1,11 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using GridProblem;
 
-Solution s = new Solution();
+string path = "grid_input.txt";
+
+Solution s = new Solution(path);
 s.Solve();
-while (true) { }
+
+Console.WriteLine();
+Console.WriteLine("Press any key to continue...");
+Console.ReadKey();

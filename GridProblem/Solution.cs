@@ -23,6 +23,11 @@ namespace GridProblem
             Y = MathF.Round(y, Precision);
         }
 
+        public Point RoundVals()
+        {
+            return new Point(MathF.Round(X), MathF.Round(Y));
+        }
+
 
         public float Distance(Point p)
         {
@@ -75,15 +80,20 @@ namespace GridProblem
     public class Solution
     {
         public List<Point> gridPositions;
-
+        private bool errorFlag = false;
         //Map the points. This seems reduntant, but we will need this to do data matching later as the given points are not perfectly collinear.
-        public Dictionary<string, Point> positionMap;     
+        private Dictionary<string, Point> positionMap;
+        private string path;
 
-        public Solution()
+        private Point diffVect; //Store the initial difference vector to help us calculate alpha later
+
+        public Solution(string filePath)
         {
-            string path = "grid_input.txt";
+            path = filePath;
+            
             gridPositions = new List<Point>();
             positionMap = new Dictionary<string, Point>();
+            diffVect = new Point(0, 0);
             if (File.Exists(path))
             {
                 StreamReader reader = new StreamReader(path);
@@ -97,7 +107,7 @@ namespace GridProblem
                     gridPositions.Add(p);
 
                     //Add position to positionmap
-                    Point keyPoint = new Point(MathF.Round(p.X), MathF.Round(p.Y));
+                    Point keyPoint = p.RoundVals();
                     positionMap.Add(keyPoint.ToString(), p);
                 }
 
@@ -105,6 +115,7 @@ namespace GridProblem
             else
             {
                 Console.WriteLine("File could not be found!");
+                errorFlag = true;
             }
 
            
@@ -123,6 +134,8 @@ namespace GridProblem
 
         public void Solve()
         {
+            if (errorFlag) return;
+
             //Get the average of all the points. This will give us the center of the graph
             float xAvg = gridPositions.Average(p => p.X);
             float yAvg = gridPositions.Average(p => p.Y);
@@ -144,15 +157,17 @@ namespace GridProblem
 
                 if (dist > maxDist)
                 {
-                    if (diff.X < 0 && diff.Y < 0)
+                    if ((diff.X < 0 && diff.Y < 0) || (diff.X == 0 && diff.Y < 0)) //Added case for 45 degrees
                     {
                         maxDist = dist;
                         origIndex = i;
+                        diffVect = diff;
                     }
                 }
             }
             
             origPoint = gridPositions[origIndex];
+            Console.WriteLine("Orig Point: " + origPoint);
 
             //Now we find the smallest diff between the orig point and another point. This is our grid cell size. 
             //We just need to rotate it 90 degrees to find the second grid cell size
@@ -176,7 +191,15 @@ namespace GridProblem
 
             //Now that we have delta A, we can find delta B. Since these are our two fundamental coordinates, we can reconstruct the entire graph with them
             Point deltaB = new Point (deltaA.Y, -deltaA.X);
-            
+
+            //Check if origin plus delta B exists in the map, if not, flip deltaB
+            string testKey = (deltaB + origPoint).RoundVals().ToString();
+            if (!positionMap.ContainsKey(testKey))
+            {
+                 deltaB = deltaB * -1;
+            }
+        
+           
             //With origPoint, deltaA, and deltaB, we have what we need to print our solution
             PrintSolution(origPoint, deltaA, deltaB);
 
@@ -212,7 +235,7 @@ namespace GridProblem
 
                     //create a unique collision by rounding to the nearest integer.
                     //This efficiently maps the linear  points I have generated with the non-linear points in the data set
-                    Point keyPoint = new Point(MathF.Round(gridPoint.X), MathF.Round(gridPoint.Y));
+                    Point keyPoint = gridPoint.RoundVals();
                     s += positionMap[keyPoint.ToString()];
                     if (j < dim - 1)
                     {
@@ -236,7 +259,7 @@ namespace GridProblem
                     Point gridPoint = origPoint + deltaB * i + deltaA * j;
                     collinear += gridPoint;
 
-                    Point keyPoint = new Point(MathF.Round(gridPoint.X), MathF.Round(gridPoint.Y));
+                    Point keyPoint = gridPoint.RoundVals();
                     s += positionMap[keyPoint.ToString()];
                     if (j > 0)
                     {
@@ -259,13 +282,20 @@ namespace GridProblem
 
             //Now that we have deltaA and deltaB, we can calculate alpha
             //between deltaA and deltaB, find the lowest dot product with the Forward vector (0, 1)
-            Point fwd = new Point(0, 1);
+            Point fwd = new Point(1, 0);
             float dotA = Point.Dot(deltaA, fwd);
             float dotB = Point.Dot(deltaB, fwd);
+            float alpha = 0;
+
+            Console.WriteLine("DeltaA: " + deltaA + " DeltaB: " + deltaB);
+
+            //Console.WriteLine("Dot A: " + dotA + " Dot B: " + dotB);
 
             float maxDot = 0;
+
             Point closestToFwd = new Point(0, 0);
-            if (dotA > dotB)
+
+            if (MathF.Abs(dotA) > MathF.Abs(dotB))
             {
                 maxDot = dotA;
                 closestToFwd = deltaA;
@@ -274,12 +304,29 @@ namespace GridProblem
             {
                 maxDot = dotB;
                 closestToFwd = deltaB;
+
             }
 
             //Magnitude of the forward vector is 1
             //so we just need the magnitde of closestToFwd
-            float alpha = MathF.Acos(maxDot / closestToFwd.Magnitude()) * (180.0f / MathF.PI);
+            float alphaA = MathF.Acos(dotA / deltaA.Magnitude()) * (180.0f / MathF.PI);
+            float alphaB = MathF.Acos(dotB / deltaB.Magnitude()) * (180.0f / MathF.PI);
+
+            //Check for correct quadrant. We want to find the smallest angle relative to (1, 0)
+            //NOTE: This will work for all angles under 180, but not above 180 because of symmetry
+            if((deltaA.X < 0 && deltaA.Y < 0) || (deltaA.X > 0 && deltaA.Y < 0))
+            {
+                alphaA += 180;
+            }
+
+            if ((deltaB.X < 0 && deltaB.Y < 0) || (deltaB.X > 0 && deltaB.Y < 0))
+            {
+                alphaB += 180;
+            }
+
+            alpha  = MathF.Min(alphaA, alphaB);
             Console.WriteLine("Alpha: " + alpha);
+ 
         }
    
     }
